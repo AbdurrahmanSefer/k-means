@@ -1,0 +1,96 @@
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from sklearn.datasets import make_blobs
+
+
+nokta_sayisi=input("lutfen nokta sayiyisi giriniz")
+X, y = make_blobs(n_samples=nokta_sayisi, centers=100, n_features=2)
+
+df = pd.DataFrame(dict(x=X[:,0], y=X[:,1], label=y))
+np.random.seed(200)
+
+k=input("kac tane merkez olacak lutfen 2 ile 8 arasi seciniz")
+
+centroids = {
+    i + 1: [np.random.randint(0, 80), np.random.randint(0, 80)]
+    for i in range(k)
+}
+
+fig = plt.figure(figsize=(5, 5))
+
+plt.scatter(df['x'], df['y'], color='k')
+
+
+ # renkler {'b', 'g', 'r', 'c', 'm', 'y', 'k', 'w'};
+if k==2:
+    colmap = {1: 'r', 2: 'g'}
+elif k==3:
+    colmap = {1: 'r', 2: 'g',3:'b'}
+elif k==4:
+ colmap = {1: 'r', 2: 'g',3:'b',4:'y'}
+elif k == 5:
+ colmap = {1: 'r', 2: 'g',3:'b',4:'y',5:'c'}
+elif k==6:
+ colmap =  {1: 'r', 2: 'g',3:'b',4:'y',5:'c',6:'m'}
+elif k==7:
+ colmap =  {1: 'r', 2: 'g',3:'b',4:'y',5:'c',6:'m',7:'k'}
+elif k==8:
+ colmap =  {1: 'r', 2: 'g',3:'b',4:'y',5:'c',6:'m',7:'k',8:'w'}
+
+
+
+
+
+for i in centroids.keys():
+    plt.scatter(*centroids[i], color=colmap[i])
+plt.xlim(0, 80)
+plt.ylim(0, 80)
+plt.show()
+def assignment(df, centroids):
+    for i in centroids.keys():
+        # sqrt((x1 - x2)^2 - (y1 - y2)^2)
+        df['distance_from_{}'.format(i)] = (
+            np.sqrt(
+                (df['x'] - centroids[i][0]) ** 2
+                + (df['y'] - centroids[i][1]) ** 2
+            )
+        )
+    centroid_distance_cols = ['distance_from_{}'.format(i) for i in centroids.keys()]
+    df['closest'] = df.loc[:, centroid_distance_cols].idxmin(axis=1)
+    df['closest'] = df['closest'].map(lambda x: int(x.lstrip('distance_from_')))
+    df['color'] = df['closest'].map(lambda x: colmap[x])
+    return df
+df = assignment(df, centroids)
+
+
+plt.scatter(df['x'], df['y'], color=df['color'], alpha=0.5, edgecolor='k')
+for i in centroids.keys():
+    plt.scatter(*centroids[i], color=colmap[i])
+plt.xlim(0, 80)
+plt.ylim(0, 80)
+plt.show()
+import copy
+old_centroids = copy.deepcopy(centroids)
+def update(k):
+    for i in centroids.keys():
+        centroids[i][0] = np.mean(df[df['closest'] == i]['x'])
+        centroids[i][1] = np.mean(df[df['closest'] == i]['y'])
+    return k
+centroids = update(centroids)
+fig = plt.figure(figsize=(5, 5))
+ax = plt.axes()
+plt.scatter(df['x'], df['y'], color=df['color'], alpha=0.5, edgecolor='k')
+for i in centroids.keys():
+    plt.scatter(*centroids[i], color=colmap[i])
+plt.xlim(0, 80)
+plt.ylim(0, 80)
+for i in old_centroids.keys():
+    old_x = old_centroids[i][0]
+    old_y = old_centroids[i][1]
+    dx = (centroids[i][0] - old_centroids[i][0]) * 0.75
+    dy = (centroids[i][1] - old_centroids[i][1]) * 0.75
+plt.show()
+print(df)
